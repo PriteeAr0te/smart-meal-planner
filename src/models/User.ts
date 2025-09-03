@@ -1,30 +1,35 @@
 import { model, models, Schema } from "mongoose";
-import { string } from "zod";
 
 const UserSchema = new Schema({
     name: {
-        type: string,
+        type: String,
         required: true,
     },
     email: {
-        type: string,
+        type: String,
         required: true,
         unique: true,
+        sparse: true,
+    },
+    phone: {
+        type: String,
+        unique: true,
+        sparse: true,
+        match: /^\+[1-9]\d{1,14}$/,
     },
     password: {
-        type: string,
-        // required: true,
+        type: String,
     },
     profileImg: {
-        type: string,
+        type: String,
     },
     role: {
-        type: string,
+        type: String,
         enum: ["owner", "member", "admin"],
         default: "member",
     },
     status: {
-        type: string,
+        type: String,
         enum: ["active", "inactive", "banned"],
         default: "active",
     },
@@ -34,15 +39,15 @@ const UserSchema = new Schema({
     },
     preferences: {
         dietType: {
-            type: string,
+            type: String,
             enum: ["vegetarian", "vegan", "keto", "paleo", "balanced", "none"],
             default: 'none',
         },
         allergies: [{
-            type: string,
+            type: String,
         }],
         dislikedIngredients: [{
-            type: string,
+            type: String,
         }],
     },
     favorites: {
