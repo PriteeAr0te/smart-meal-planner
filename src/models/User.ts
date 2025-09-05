@@ -1,6 +1,34 @@
-import { model, models, Schema } from "mongoose";
+import { HydratedDocument, model, models, Schema } from "mongoose";
+import bcrypt from "bcryptjs";
 
-const UserSchema = new Schema({
+export interface IUser extends Document {
+    name: string;
+    email?: string;
+    phone?: string;
+    password?: string;
+    profileImg?: string;
+    role: "owner" | "member" | "admin";
+    status: "active" | "inactive" | "banned";
+    household?: Schema.Types.ObjectId;
+    preferences: {
+        dietType: "vegetarian" | "vegan" | "keto" | "paleo" | "balanced" | "none";
+        allergies: string[];
+        dislikedIngredients: string[];
+    };
+    favorites: {
+        recipes: Schema.Types.ObjectId[];
+        mealPlans: Schema.Types.ObjectId[];
+    };
+    createdRecipes: Schema.Types.ObjectId[];
+    createdAt: Date;
+    updatedAt: Date;
+
+    comparePassword(candidatePassword: string): Promise<boolean>;
+}
+
+export type UserDocument = HydratedDocument<IUser>
+
+const UserSchema = new Schema<IUser>({
     name: {
         type: String,
         required: true,
@@ -59,5 +87,21 @@ const UserSchema = new Schema({
     { timestamps: true }
 );
 
-const User = models.User || model("User", UserSchema);
+UserSchema.pre<UserDocument>('save', async function (next) {
+    if (!this.isModified('password') || !this.password) return next();
+
+    const salt = await bcrypt.genSalt(10);
+    this.password = await bcrypt.hash(this.password, salt);
+    next();
+
+    UserSchema.methods.comparePassword = async function (
+        candidatePassword: string
+    ) : Promise<boolean> {
+        if(!this.password) return false;
+        return bcrypt.compare(candidatePassword, this.password)
+    }
+});
+
+
+const User = models.User || model<IUser>("User", UserSchema);
 export default User;

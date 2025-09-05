@@ -1,6 +1,17 @@
-import { model, models, Schema } from "mongoose";
+import { HydratedDocument, model, models, Schema } from "mongoose";
 
-const HouseholdSchema = new Schema({
+export interface IHousehold {
+    name: string;
+    owner: Schema.Types.ObjectId;
+    members: Schema.Types.ObjectId[];
+    status: "active" | "inactive";
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+export type HouseholdDocument = HydratedDocument<IHousehold>;
+
+const HouseholdSchema = new Schema<IHousehold>({
     name: {
         type: String,
         required: true,
@@ -25,5 +36,5 @@ const HouseholdSchema = new Schema({
     { timestamps: true },
 );
 
-const Household = models.Household || model("Household", HouseholdSchema);
+const Household = models.Household || model<IHousehold>("Household", HouseholdSchema);
 export default Household;
