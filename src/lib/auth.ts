@@ -2,37 +2,33 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import { connectToDatabase } from "./db";
 import User from "@/models/User";
 import bcrypt from "bcryptjs";
-import type { AuthOptions } from "next-auth";
 import { JWT } from "next-auth/jwt";
+import NextAuth from "next-auth";
+import type { NextAuthOptions } from "next-auth";
 import { User as NextAuthUser } from "next-auth";
 import { Session } from "next-auth";
 
-export const authOptions: AuthOptions = {
+export const authOptions: NextAuthOptions = {
     providers: [
         CredentialsProvider({
             name: "Credentials",
             credentials: {
-                name: { label: "Name", type: "text", placeholder: "Enter your name" },
                 email: { label: "Email ID", type: "email", placeholder: "Enter your email ID" },
-                phone: { label: "Mobile Number", type: "text", placeholder: "Enter your mobile number" },
-                role: { label: "Role", type: "text", placeholder: "Enter your role" },
                 password: { label: "Password", type: "password", placeholder: "Enter your password" },
             },
             async authorize(credentials) {
-                if (!credentials?.name ||
-                    !credentials?.email ||
-                    !credentials?.phone ||
-                    !credentials?.role ||
+                if (!credentials?.email ||
                     !credentials?.password) {
                     throw new Error("Please fill all the fields")
                 }
 
                 try {
+                    const email = (credentials.email as string).toLowerCase().trim();
+                    // const password = credentials.password as string;
+
                     await connectToDatabase();
 
-                    const user = await User.findOne({
-                        email: credentials.email
-                    });
+                    const user = await User.findOne({ email }).select("+password");
 
                     if (!user) {
                         throw new Error("No user found, please sign up");
@@ -87,3 +83,5 @@ export const authOptions: AuthOptions = {
     },
     secret: process.env.AUTH_SECRET,
 };
+
+export default NextAuth(authOptions)

@@ -1,5 +1,5 @@
 import { JWT } from "next-auth/jwt";
-import withAuth from "next-auth/middleware";
+import { withAuth } from "next-auth/middleware";
 import { NextRequest, NextResponse } from "next/server";
 
 export default withAuth(
@@ -8,7 +8,7 @@ export default withAuth(
     },
     {
         callbacks: {
-            authorized: ({ token, req }: { token: JWT, req: NextRequest}) => {
+            authorized: ({ token, req }: { token: JWT | null, req: NextRequest }) => {
                 const { pathname } = req.nextUrl;
 
                 if (pathname.startsWith('/api/auth') ||
@@ -27,5 +27,5 @@ export default withAuth(
 );
 
 export const config = {
-    matcher: ["/((?!api/auth|_next/static|_next/image|favicon.ico|public).*)"],
+    matcher: ["/((?!api/auth|_next/static|_next/image|favicon.ico).*)"],
 }
