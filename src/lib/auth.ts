@@ -7,6 +7,7 @@ import NextAuth from "next-auth";
 import type { NextAuthOptions } from "next-auth";
 import { User as NextAuthUser } from "next-auth";
 import { Session } from "next-auth";
+import GoogleProvider from "next-auth/providers/google";
 
 export const authOptions: NextAuthOptions = {
     providers: [
@@ -53,6 +54,18 @@ export const authOptions: NextAuthOptions = {
                     throw error;
                 }
             }
+        }),
+
+        GoogleProvider({
+            clientId: process.env.GOOGLE_CLIENT_ID as string,
+            clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
+            authorization: {
+                params: {
+                    prompt: "consent",
+                    access_type: "offline",
+                    response_type: "code"
+                }
+            }
         })
     ],
 
@@ -69,6 +82,20 @@ export const authOptions: NextAuthOptions = {
                 session.user.id = token.id as string;
             }
             return session;
+        },
+
+        async signIn({ account, user }) {
+            if (account?.provider === 'google') {
+                const googleUser = user as NextAuthUser & { email_verified?: boolean };
+
+                if (googleUser.email_verified === true && googleUser.email?.endsWith("@example.com")) {
+                    return true;
+                } else {
+                    return false;
+                }
+            }
+
+            return true;
         }
     },
 
