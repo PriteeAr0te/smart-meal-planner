@@ -1,10 +1,12 @@
 import { HydratedDocument, model, models, Schema } from "mongoose";
+import crypto from "crypto";
 
 export interface IHousehold {
     name: string;
     owner: Schema.Types.ObjectId;
     members: Schema.Types.ObjectId[];
     status: "active" | "inactive";
+    inviteCode?: string;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -31,6 +33,12 @@ const HouseholdSchema = new Schema<IHousehold>({
         type: String,
         enum: ["active", "inactive"],
         default: "active",
+    },
+    inviteCode: {
+        type: String,
+        unique: true,
+        sparse: true,
+        default: () => crypto.randomBytes(4).toString('hex'),
     },
 },
     { timestamps: true },

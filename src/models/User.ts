@@ -35,13 +35,13 @@ const UserSchema = new Schema<IUser>({
     },
     email: {
         type: String,
-        required: true,
         unique: true,
         sparse: true,
     },
     phone: {
         type: String,
         unique: true,
+        required: true,
         sparse: true,
         match: /^\+[1-9]\d{1,14}$/,
     },
