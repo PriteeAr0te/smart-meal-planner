@@ -2,6 +2,7 @@ import { NextResponse, NextRequest } from "next/server";
 import { connectToDatabase } from "@/lib/db";
 import User from "@/models/User";
 import { MongoServerError } from "mongodb";
+import Household from "@/models/Household";
 
 export async function POST(request: NextRequest) {
     try {
@@ -39,7 +40,7 @@ export async function POST(request: NextRequest) {
             )
         }
 
-        await User.create({
+        const newUser = await User.create({
             email: normalizedEmail,
             phone: fullPhone,
             password,
@@ -47,8 +48,19 @@ export async function POST(request: NextRequest) {
             role: role || 'member',
         });
 
+        if (newUser.role === 'owner') {
+            const household = await Household.create({
+                name: `${newUser.name}'s Household`,
+                members: [newUser._id],
+                owner: newUser._id,
+            });
+
+            newUser.household = household._id;
+            await newUser.save();
+        }
+
         return NextResponse.json(
-            { message: "User Created Successfully" },
+            { message: "User Created Successfully", userId: newUser._id },
             { status: 201 },
         )
 

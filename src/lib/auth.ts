@@ -14,22 +14,22 @@ export const authOptions: NextAuthOptions = {
         CredentialsProvider({
             name: "Credentials",
             credentials: {
-                email: { label: "Email ID", type: "email", placeholder: "Enter your email ID" },
+                phone: { label: "Mobile Number", type: "string", placeholder: "Enter your mobile number" },
                 password: { label: "Password", type: "password", placeholder: "Enter your password" },
             },
             async authorize(credentials) {
-                if (!credentials?.email ||
+                if (!credentials?.phone ||
                     !credentials?.password) {
                     throw new Error("Please fill all the fields")
                 }
 
                 try {
-                    const email = (credentials.email as string).toLowerCase().trim();
+                    const phone = (credentials.phone as string).toLowerCase().trim();
                     // const password = credentials.password as string;
 
                     await connectToDatabase();
 
-                    const user = await User.findOne({ email }).select("+password");
+                    const user = await User.findOne({ phone }).select("+password");
 
                     if (!user) {
                         throw new Error("No user found, please sign up");
