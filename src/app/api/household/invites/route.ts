@@ -1,5 +1,6 @@
 import { authOptions } from "@/lib/auth";
 import { connectToDatabase } from "@/lib/db";
+import Household from "@/models/Household";
 import Invitation from "@/models/Invitation";
 import User from "@/models/User";
 import { getServerSession } from "next-auth";
@@ -26,29 +27,53 @@ export async function GET() {
         }
 
         if (currentUser.role !== 'owner') {
-            return NextResponse.json({ error: 'You are not authorized to see the invites' });
+            return NextResponse.json({ error: 'You are not authorized to see the invites' }, { status: 400 });
         }
 
-        const invitations = await Invitation.find({ household: currentUser.household })
+        const household = await Household.findById(currentUser.household);
+        if (!household) {
+            return NextResponse.json(
+                { error: 'Household not found' },
+                { status: 404 }
+            )
+        }
+
+        const invitations = await Invitation.find({ household: household._id })
             .populate("invitedUser", "name email phone")
             .populate("invitedBy", "name")
             .sort({ createdAt: -1 });
 
-        return NextResponse.json({
-            invitations: invitations.map((invite) => ({
-                id: invite._id,
-                code: invite.code,
-                invitedBy: invite.invitedBy,
-                household: invite.household,
-                invitedUser: invite.invitedUser,
-            })
+        if (!invitations || invitations.length === 0) {
+            return NextResponse.json(
+                { error: 'No invitations found' },
+                { status: 404 }
             )
-        })
+        }
+
+        const formattedValues = invitations.map((invite) => ({
+            id: invite._id,
+            code: invite.code,
+            status: invite.status,
+            invitedUser: invite.invitedUser ?
+                {
+                    id: invite.invitedUser._id,
+                    name: invite.invitedUser.name,
+                    email: invite.invitedUser.email,
+                    phone: invite.invitedUser.phone,
+                } : null,
+            invitedBy: invite.invitedBy ?
+                {
+                    id: invite.invitedBy._id,
+                    name: invite.invitedBy.name,
+                } : null,
+            household: invite.household,
+            createdAt: invite.createdAt,
+            updatedAt: invite.updatedAt,
+        }))
+
+        return NextResponse.json({ invitations: formattedValues }, { status: 200 })
     } catch (error) {
         console.log("error in fetching invitations", error);
-        return NextResponse.json({
-            error: "Internal server error",
-            status: 500
-        })
+        return NextResponse.json({ error: "Internal server error" }, { status: 500 })
     }
 }
