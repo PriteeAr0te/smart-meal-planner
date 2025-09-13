@@ -144,7 +144,7 @@ const RecipeSchema = new Schema<IRecipe>({
     dietTags: [{
         type: String,
         enum: ["vegetarian", "vegan", "keto", "paleo", "balanced", "none"],
-        default: 'none'
+        default: ['none']
     }],
     allergens: [{
         type: String,
@@ -252,9 +252,38 @@ const RecipeSchema = new Schema<IRecipe>({
     toObject: { virtuals: true }
 });
 
+RecipeSchema.index({ title: "text", description: "text", tags: "text" });
+
 RecipeSchema.virtual("totalTime").get(function () {
     return (this.prepTime || 0) + (this.cookTime || 0);
 });
+
+function slugify(str: string) {
+    return str
+        .toLowerCase()
+        .trim()
+        .replace(/[\s\W-]+/g, '-')
+        .replace(/^-+|-+$/g, '');
+}
+
+
+RecipeSchema.pre('save', async function (next) {
+    if (!this.isModified('title') && this.slug) return next();
+
+    const baseSlug = slugify(this.title);
+    let slug = baseSlug;
+    let counter = 1;
+
+    const RecipeModel = models.Recipe || model('Recipe', RecipeSchema);
+
+    while (await RecipeModel.exists({ slug })) {
+        slug = `${baseSlug}-${counter++}`;
+    }
+
+    this.slug = slug;
+    next();
+
+})
 
 const Recipe = models.Recipe || model('Recipe', RecipeSchema);
 export default Recipe;
